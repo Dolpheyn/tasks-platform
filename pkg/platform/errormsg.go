@@ -1,5 +1,7 @@
 package platform
 
-const (
-	ErrTaskQueueEmpty = "task queue empty"
+import "fmt"
+
+var (
+	ErrTaskQueueEmpty = fmt.Errorf("task queue is empty")
 )

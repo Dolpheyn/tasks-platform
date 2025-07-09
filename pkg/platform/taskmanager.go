@@ -19,6 +19,7 @@ type TaskManager struct {
 	hearbeatsByID     map[string][]*time.Time
 	pickupSignalsByID map[string]chan PickupSignal
 	dropSignalsByID   map[string]chan DropSignal
+	resultSignalsByID map[string]chan ResultSignal
 }
 
 func NewTaskManager() *TaskManager {
@@ -35,19 +36,43 @@ func NewTaskManager() *TaskManager {
 // when signalled that the task is being picked up, it immediately request to asynq for the lease of the task to be extended.
 // then it check the heartbeat record, and keep extending the lease for as long as the client is sending heartbeat (with some timeout).
 func (m *TaskManager) ProcessTask(ctx context.Context, task *asynq.Task) error {
-	log.Printf("[TaskManager::ProcessTask] registering task. task=%+v", task)
+	log.Printf("[TaskManager::ProcessTask] registering task with tasktype %s", task.Type())
 
-	res, err := m.registerTask(task)
+	registerTaskRes, err := m.registerTask(task)
 	if err != nil {
 		return err
 	}
 
+	// wait for pickup signal with timeout
+	timeoutCtx, cancel := context.WithTimeout(context.Background(), time.Second*10)
+	defer cancel()
+
+	pickupSignalListener := registerTaskRes.pickupSignalListener
+
 	select {
-	case pickup := <-res.pickupSignalListener:
-		log.Printf("[TaskManager::ProcessTask] task picked up. platformTaskID=%s clientID=%s", res.platformTaskID, pickup.ClientID)
-		// TODO heartbeat listener and lease manager
-	case drop := <-res.dropSignalListener:
-		return fmt.Errorf("dropped due to %s", drop.Reason)
+	case pickup := <-pickupSignalListener:
+		log.Printf("[TaskManager::ProcessTask] task picked up. platformTaskID=%s clientID=%s", registerTaskRes.platformTaskID, pickup.ClientID)
+	case <-timeoutCtx.Done():
+		log.Printf("[Taskmanager::ProcessTask] deadline exceeded without pickup")
+		return fmt.Errorf("[taskplatform] deadline exceeded without pickup")
+	}
+
+	// task picked up, wait for result with timeout
+	timeoutCtx, cancel = context.WithTimeout(context.Background(), time.Minute)
+	defer cancel()
+
+	platformTaskID := registerTaskRes.platformTaskID
+	resultListener := registerTaskRes.resultListener
+
+	select {
+	case <-timeoutCtx.Done():
+		log.Printf("[Taskmanager::ProcessTask] worker exceeded deadline")
+		m.unregisterTask(platformTaskID)
+		return fmt.Errorf("[taskplatform] worker exceeded deadline")
+	case taskResult := <-resultListener:
+		if !taskResult.Success {
+			return fmt.Errorf("[client] %s", taskResult.Msg)
+		}
 	}
 
 	return nil
@@ -63,7 +88,7 @@ func (m *TaskManager) TryConsumeTask(ctx context.Context, taskType string, clien
 
 	tasks, ok := m.pendingTasksByType[taskType]
 	if !ok || len(tasks) == 0 {
-		return nil, fmt.Errorf(ErrTaskQueueEmpty)
+		return nil, ErrTaskQueueEmpty
 	}
 
 	log.Printf("[TryConsumeTask] got tasks %+v", tasks)
@@ -94,12 +119,14 @@ type registerTaskRespose struct {
 	platformTaskID       string
 	pickupSignalListener <-chan PickupSignal
 	dropSignalListener   <-chan DropSignal
+	resultListener       <-chan ResultSignal
 }
 
 func (m *TaskManager) registerTask(task *asynq.Task) (*registerTaskRespose, error) {
 	taskType := task.Type()
 	pickupSignal := make(chan PickupSignal, 1)
 	dropSignal := make(chan DropSignal, 1)
+	resultSignal := make(chan ResultSignal, 1)
 
 	platformTask, err := FromAsynqTask(task)
 	log.Printf("[registerTask] platformTask=%+v", platformTask)
@@ -123,6 +150,7 @@ func (m *TaskManager) registerTask(task *asynq.Task) (*registerTaskRespose, erro
 	m.pendingTasksByType[taskType] = tasks
 	m.pickupSignalsByID[platformTaskID] = pickupSignal
 	m.dropSignalsByID[platformTaskID] = dropSignal
+	m.resultSignalsByID[platformTaskID] = resultSignal
 
 	res := &registerTaskRespose{
 		platformTaskID:       platformTaskID,
@@ -132,10 +160,37 @@ func (m *TaskManager) registerTask(task *asynq.Task) (*registerTaskRespose, erro
 	return res, nil
 }
 
+func (m *TaskManager) unregisterTask(platformTaskID string) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
+	delete(m.activeTasksByID, platformTaskID)
+	delete(m.hearbeatsByID, platformTaskID)
+	closeChanAndDelete(m.pickupSignalsByID, platformTaskID)
+	closeChanAndDelete(m.dropSignalsByID, platformTaskID)
+	closeChanAndDelete(m.resultSignalsByID, platformTaskID)
+
+	return nil
+}
+
+func closeChanAndDelete[T any](m map[string]chan T, key string) {
+	c, has := m[key]
+	if !has {
+		return
+	}
+	close(c)
+	delete(m, key)
+}
+
 type PickupSignal struct {
 	ClientID string
 }
 
 type DropSignal struct {
 	Reason string
+}
+
+type ResultSignal struct {
+	Success bool
+	Msg     string
 }
