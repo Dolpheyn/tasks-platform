@@ -56,3 +56,28 @@ type FailRequest struct {
 	Error    string `json:"error" binding:"required"`
 	Retry    bool   `json:"retry"`
 }
+
+// ProcessAt for absolute timestamp scheduling
+type ProcessAt struct {
+	Time time.Time `json:"time" binding:"required"`
+}
+
+// ProcessIn for relative duration scheduling
+type ProcessIn struct {
+	DurationSecs uint `json:"duration_secs" binding:"required,min=1"`
+}
+
+// ScheduleTaskRequest for creating scheduled tasks
+type ScheduleTaskRequest struct {
+	JobType  string          `json:"job_type" binding:"required"`
+	Payload  json.RawMessage `json:"payload" binding:"required"`
+	Queue    string          `json:"queue"`
+	MaxRetry int             `json:"max_retry"`
+	Deadline *time.Time      `json:"deadline"`
+
+	ProcessAt *ProcessAt `json:"process_at,omitempty" binding:"required_without=ProcessIn"`
+	ProcessIn *ProcessIn `json:"process_in,omitempty" binding:"required_without=ProcessAt"`
+}
+
+// ScheduleTaskResponse for scheduled task creation response
+type ScheduleTaskResponse = EnqueueTaskResponse // identical fields

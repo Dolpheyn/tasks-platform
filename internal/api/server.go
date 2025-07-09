@@ -124,6 +124,17 @@ func (s *Server) pollTasks(ctx *gin.Context) {
 }
 
 func (s *Server) scheduleTask(ctx *gin.Context) {
+	var req ScheduleTaskRequest
+	if !extractReqJSON(ctx, &req) {
+		return
+	}
+
+	res, err := handleScheduleTask(ctx.Request.Context(), &req, s.asynqClient)
+	if err != nil {
+		resErrorInternal(ctx, err)
+		return
+	}
+	ctx.JSON(200, res)
 }
 
 func (s *Server) sendHeartbeat(ctx *gin.Context) {
