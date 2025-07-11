@@ -7,6 +7,8 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/hibiken/asynq"
 
+	dto "github.com/dolpheyn/tasks-platform/internal/api/dto"
+	handlers "github.com/dolpheyn/tasks-platform/internal/api/handlers"
 	"github.com/dolpheyn/tasks-platform/internal/config"
 	"github.com/dolpheyn/tasks-platform/pkg/platform"
 )
@@ -76,6 +78,84 @@ func (s *Server) startTaskManager(redisOpt *asynq.RedisClientOpt, cfg asynq.Conf
 	}()
 }
 
+func (s *Server) enqueueTask(ctx *gin.Context) {
+	var req dto.EnqueueTaskRequest
+	if !extractReqJSON(ctx, &req) {
+		return
+	}
+
+	res, err := handlers.HandleEnqueueTask(ctx.Request.Context(), &req, s.asynqClient)
+	if err != nil {
+		resErrorInternal(ctx, err)
+		return
+	}
+
+	ctx.JSON(200, res)
+}
+
+func (s *Server) pollTasks(ctx *gin.Context) {
+	var req dto.PollTaskRequest
+	if !extractReqForm(ctx, &req) {
+		return
+	}
+
+	res, err := handlers.HandlePollTask(ctx.Request.Context(), &req, s.taskManager)
+	if err != nil {
+		resErrorInternal(ctx, err)
+	}
+
+	ctx.JSON(200, res)
+}
+
+func (s *Server) scheduleTask(ctx *gin.Context) {
+	var req dto.ScheduleTaskRequest
+	if !extractReqJSON(ctx, &req) {
+		return
+	}
+
+	res, err := handlers.HandleScheduleTask(ctx.Request.Context(), &req, s.asynqClient)
+	if err != nil {
+		resErrorInternal(ctx, err)
+		return
+	}
+	ctx.JSON(200, res)
+}
+
+func (s *Server) sendHeartbeat(ctx *gin.Context) {
+}
+
+func (s *Server) completeTask(ctx *gin.Context) {
+	var req dto.CompleteRequest
+	if !extractReqJSON(ctx, &req) {
+		return
+	}
+
+	err := handlers.HandleCompleteTask(ctx, &req, s.taskManager)
+	if err != nil {
+		resErrorInternal(ctx, err)
+		return
+	}
+	ctx.JSON(202, "")
+}
+
+func (s *Server) failTask(ctx *gin.Context) {
+	var req dto.FailRequest
+
+	err := handlers.HandleFailTask(ctx, &req, s.taskManager)
+	if err != nil {
+		resErrorInternal(ctx, err)
+		return
+	}
+	ctx.JSON(202, "")
+}
+
+func (s *Server) healthCheck(ctx *gin.Context) {
+}
+
+func resErrorInternal(ctx *gin.Context, err error) {
+	ctx.JSON(500, gin.H{"error": err.Error()})
+}
+
 func extractReqJSON(ctx *gin.Context, obj any) bool {
 	if err := ctx.ShouldBindJSON(obj); err != nil {
 		ctx.JSON(400, gin.H{"error": err.Error()})
@@ -92,63 +172,4 @@ func extractReqForm(ctx *gin.Context, obj any) bool {
 	}
 
 	return true
-}
-
-func (s *Server) enqueueTask(ctx *gin.Context) {
-	var req EnqueueTaskRequest
-	if !extractReqJSON(ctx, &req) {
-		return
-	}
-
-	res, err := handleEnqueueTask(ctx.Request.Context(), &req, s.asynqClient)
-	if err != nil {
-		resErrorInternal(ctx, err)
-		return
-	}
-
-	ctx.JSON(200, res)
-}
-
-func (s *Server) pollTasks(ctx *gin.Context) {
-	var req PollTaskRequest
-	if !extractReqForm(ctx, &req) {
-		return
-	}
-
-	res, err := handlePollTask(ctx.Request.Context(), &req, s.taskManager)
-	if err != nil {
-		resErrorInternal(ctx, err)
-	}
-
-	ctx.JSON(200, res)
-}
-
-func (s *Server) scheduleTask(ctx *gin.Context) {
-	var req ScheduleTaskRequest
-	if !extractReqJSON(ctx, &req) {
-		return
-	}
-
-	res, err := handleScheduleTask(ctx.Request.Context(), &req, s.asynqClient)
-	if err != nil {
-		resErrorInternal(ctx, err)
-		return
-	}
-	ctx.JSON(200, res)
-}
-
-func (s *Server) sendHeartbeat(ctx *gin.Context) {
-}
-
-func (s *Server) completeTask(ctx *gin.Context) {
-}
-
-func (s *Server) failTask(ctx *gin.Context) {
-}
-
-func (s *Server) healthCheck(ctx *gin.Context) {
-}
-
-func resErrorInternal(ctx *gin.Context, err error) {
-	ctx.JSON(500, gin.H{"error": err.Error()})
 }
