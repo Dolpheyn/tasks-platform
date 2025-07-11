@@ -29,6 +29,7 @@ func NewTaskManager() *TaskManager {
 		hearbeatsByID:      map[string][]*time.Time{},
 		pickupSignalsByID:  map[string]chan PickupSignal{},
 		dropSignalsByID:    map[string]chan DropSignal{},
+		resultSignalsByID:  map[string]chan ResultSignal{},
 	}
 }
 
@@ -73,6 +74,7 @@ func (m *TaskManager) ProcessTask(ctx context.Context, task *asynq.Task) error {
 		if !taskResult.Success {
 			return fmt.Errorf("[client] %s", taskResult.Msg)
 		}
+		break
 	}
 
 	return nil
@@ -113,6 +115,33 @@ func (m *TaskManager) TryConsumeTask(ctx context.Context, taskType string, clien
 	pickupSignalListener <- PickupSignal{ClientID: clientID}
 
 	return task, nil
+}
+
+func (m *TaskManager) RegisterResultSuccess(platformTaskID string) error {
+	resultSignal, ok := m.resultSignalsByID[platformTaskID]
+	if !ok {
+		return fmt.Errorf("result signal not found. platformTaskID=%s", platformTaskID)
+	}
+
+	resultSignal <- ResultSignal{
+		Success: true,
+	}
+
+	return nil
+}
+
+func (m *TaskManager) RegisterResultFailure(platformTaskID string, errMessage string) error {
+	resultSignal, ok := m.resultSignalsByID[platformTaskID]
+	if !ok {
+		return fmt.Errorf("result signal not found. platformTaskID=%s", platformTaskID)
+	}
+
+	resultSignal <- ResultSignal{
+		Success: false,
+		Msg:     errMessage,
+	}
+
+	return nil
 }
 
 type registerTaskRespose struct {
@@ -156,6 +185,7 @@ func (m *TaskManager) registerTask(task *asynq.Task) (*registerTaskRespose, erro
 		platformTaskID:       platformTaskID,
 		pickupSignalListener: pickupSignal,
 		dropSignalListener:   dropSignal,
+		resultListener:       resultSignal,
 	}
 	return res, nil
 }
