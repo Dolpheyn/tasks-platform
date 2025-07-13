@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"context"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/hibiken/asynq"
@@ -23,7 +24,7 @@ func HandleEnqueueTask(_ context.Context, req *dto.EnqueueTaskRequest, asynqClie
 		return nil, err
 	}
 
-	if _, err := asynqClient.Enqueue(task); err != nil {
+	if _, err := asynqClient.Enqueue(task, asynq.Retention(time.Minute*10)); err != nil {
 		return nil, err
 	}
 

@@ -21,6 +21,8 @@ func HandleScheduleTask(_ context.Context, req *dto.ScheduleTaskRequest, asynqCl
 	}
 
 	asynqOpts := toAsynqOptions(req)
+	asynqOpts = append(asynqOpts, asynq.Retention(time.Minute*10))
+
 	if _, err := asynqClient.Enqueue(task, asynqOpts...); err != nil {
 		return nil, err
 	}
