@@ -60,11 +60,13 @@ func (s *Server) Run() error {
 func (s *Server) setupRoutes() {
 	s.router.POST("/tasks", s.enqueueTask)
 	s.router.POST("/tasks/scheduled", s.scheduleTask)
+
 	s.router.GET("/poll", s.pollTasks)
-	s.router.GET("/apoll", s.pollTasks)
+
 	s.router.POST("/heartbeat", s.sendHeartbeat)
 	s.router.POST("/complete", s.completeTask)
 	s.router.POST("/fail", s.failTask)
+
 	s.router.GET("/health", s.healthCheck)
 }
 
@@ -151,6 +153,8 @@ func (s *Server) failTask(ctx *gin.Context) {
 
 func (s *Server) healthCheck(ctx *gin.Context) {
 }
+
+// Helpers
 
 func resErrorInternal(ctx *gin.Context, err error) {
 	ctx.JSON(500, gin.H{"error": err.Error()})
