@@ -10,7 +10,7 @@ import (
 	dto "github.com/dolpheyn/tasks-platform/internal/api/dto"
 	handlers "github.com/dolpheyn/tasks-platform/internal/api/handlers"
 	"github.com/dolpheyn/tasks-platform/internal/config"
-	"github.com/dolpheyn/tasks-platform/pkg/platform"
+	"github.com/dolpheyn/tasks-platform/pkg/platform/taskmanager"
 )
 
 type Server struct {
@@ -18,7 +18,7 @@ type Server struct {
 	router      *gin.Engine
 	asynqClient *asynq.Client
 
-	taskManager *platform.TaskManager
+	taskManager *taskmanager.TaskManager
 }
 
 func NewServer(cfg *config.Config) *Server {
@@ -35,7 +35,7 @@ func NewServer(cfg *config.Config) *Server {
 		config:      cfg,
 		router:      router,
 		asynqClient: asynq.NewClient(&redisOpt),
-		taskManager: platform.NewTaskManager(),
+		taskManager: taskmanager.NewTaskManager(),
 	}
 
 	server.startTaskManager(&redisOpt,
