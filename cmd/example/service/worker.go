@@ -18,10 +18,9 @@ type WorkerService struct {
 	port     int
 }
 
-func NewWorkerService(id string, port int, taskType string) *WorkerService {
+func NewWorkerService(id string, taskType string) *WorkerService {
 	return &WorkerService{
 		id:       id,
-		port:     port,
 		taskType: taskType,
 	}
 }
@@ -31,7 +30,7 @@ func (w *WorkerService) Start(ctx context.Context) {
 }
 
 func (w *WorkerService) pollForTasks(ctx context.Context) {
-	ticker := time.NewTicker(2 * time.Second)
+	ticker := time.NewTicker(1 * time.Second)
 	defer ticker.Stop()
 
 	for {

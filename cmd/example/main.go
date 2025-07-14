@@ -22,11 +22,15 @@ func main() {
 
 	var wg sync.WaitGroup
 
-	// Start 2 worker services in cluster
-	wg.Add(2)
+	// add workers (I'm separating the normal and scheduled jobs for visibility's sake)
+	wg.Add(6)
+	startWorker(ctx, "worker-1", "send-email", &wg)
+	startWorker(ctx, "worker-2", "scheduled-process-in-send-email", &wg)
+	startWorker(ctx, "worker-3", "scheduled-process-at-send-email", &wg)
 
-	startWorker(ctx, "worker-1", 8081, "send-email", &wg)
-	startWorker(ctx, "worker-2", 8082, "generate-merchant-sales-report", &wg)
+	startWorker(ctx, "worker-4", "generate-merchant-sales-report", &wg)
+	startWorker(ctx, "worker-5", "scheduled-process-in-generate-merchant-sales-report", &wg)
+	startWorker(ctx, "worker-6", "scheduled-process-at-generate-merchant-sales-report", &wg)
 
 	// Start job producer
 	wg.Add(2)
@@ -46,11 +50,11 @@ func main() {
 	fmt.Println("All services stopped.")
 }
 
-func startWorker(ctx context.Context, id string, port int, taskType string, wg *sync.WaitGroup) {
+func startWorker(ctx context.Context, id string, taskType string, wg *sync.WaitGroup) {
 	go func() {
 		defer wg.Done()
-		service1 := service.NewWorkerService(id, port, taskType)
-		service1.Start(ctx)
+		worker := service.NewWorkerService(id, taskType)
+		worker.Start(ctx)
 	}()
 
 }
