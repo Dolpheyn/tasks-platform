@@ -1,0 +1,36 @@
+jobs:
+  - name: "daily-cleanup"
+    schedule: "0 2 * * *"  # Daily at 2 AM
+    task_type: "cleanup"
+    timezone: "UTC"
+    enabled: true
+    payload:
+      action: "cleanup_old_data"
+      retention_days: 30
+    metadata:
+      owner: "platform-team"
+      description: "Daily cleanup of old task data"
+
+  - name: "hourly-health-check"
+    schedule: "0 * * * *"  # Every hour
+    task_type: "health_check"
+    timezone: "UTC"
+    enabled: true
+    payload:
+      check_type: "full"
+      timeout_seconds: 30
+    metadata:
+      owner: "ops-team"
+      description: "Hourly system health check"
+
+  - name: "weekly-report"
+    schedule: "0 9 * * 1"  # Monday at 9 AM
+    task_type: "report_generation"
+    timezone: "America/New_York"
+    enabled: false
+    payload:
+      report_type: "weekly_summary"
+      recipients: ["admin@example.com"]
+    metadata:
+      owner: "analytics-team"
+      description: "Weekly analytics report generation"
