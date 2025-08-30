@@ -22,10 +22,10 @@ const (
 )
 
 type RedisTaskManager struct {
-	redisClient *redis.Client
+	redisClient redis.UniversalClient
 }
 
-func NewRedisTaskManager(redisClient *redis.Client) *RedisTaskManager {
+func NewRedisTaskManager(redisClient redis.UniversalClient) *RedisTaskManager {
 	return &RedisTaskManager{
 		redisClient: redisClient,
 	}
