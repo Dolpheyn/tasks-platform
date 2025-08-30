@@ -12,7 +12,7 @@ import (
 // errors:
 // - if the task queue is empty
 // - if no listeners are found (unlikely)
-func (m *TaskManager) TryConsumeTask(ctx context.Context, taskType string, clientID string) (*pfm.PlatformTask, error) {
+func (m *InMemoryTaskManager) TryConsumeTask(ctx context.Context, taskType string, clientID string) (*pfm.PlatformTask, error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 

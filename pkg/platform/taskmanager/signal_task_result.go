@@ -4,7 +4,7 @@ import (
 	"fmt"
 )
 
-func (m *TaskManager) SignalTaskResultSuccess(platformTaskID string) error {
+func (m *InMemoryTaskManager) SignalTaskResultSuccess(platformTaskID string) error {
 	resultSignal, ok := m.resultSignalsByID[platformTaskID]
 	if !ok {
 		return fmt.Errorf("result signal not found. platformTaskID=%s", platformTaskID)
@@ -17,7 +17,7 @@ func (m *TaskManager) SignalTaskResultSuccess(platformTaskID string) error {
 	return nil
 }
 
-func (m *TaskManager) SignalTaskResultFailure(platformTaskID string, errMessage string) error {
+func (m *InMemoryTaskManager) SignalTaskResultFailure(platformTaskID string, errMessage string) error {
 	resultSignal, ok := m.resultSignalsByID[platformTaskID]
 	if !ok {
 		return fmt.Errorf("result signal not found. platformTaskID=%s", platformTaskID)
