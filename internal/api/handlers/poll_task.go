@@ -8,7 +8,7 @@ import (
 	"github.com/dolpheyn/tasks-platform/pkg/platform/taskmanager"
 )
 
-func HandlePollTask(ctx context.Context, req *dto.PollTaskRequest, taskManager *taskmanager.TaskManager) (*dto.PollResponse, error) {
+func HandlePollTask(ctx context.Context, req *dto.PollTaskRequest, taskManager taskmanager.TaskManagerInterface) (*dto.PollResponse, error) {
 	log.Printf("[handlePollTask] got request. taskType=%s", req.TaskType)
 	platformTask, err := taskManager.TryConsumeTask(ctx, req.TaskType, req.WorkerID)
 	if err != nil {

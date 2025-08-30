@@ -8,7 +8,7 @@ import (
 	"github.com/dolpheyn/tasks-platform/pkg/platform/taskmanager"
 )
 
-func HandleCompleteTask(ctx context.Context, req *dto.CompleteRequest, taskManager *taskmanager.TaskManager) error {
+func HandleCompleteTask(ctx context.Context, req *dto.CompleteRequest, taskManager taskmanager.TaskManagerInterface) error {
 	log.Printf("[HandleCompleteTask] got request. taskID=%s", req.TaskID)
 	err := taskManager.SignalTaskResultSuccess(req.TaskID)
 	if err != nil {

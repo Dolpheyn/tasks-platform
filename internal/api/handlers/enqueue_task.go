@@ -15,11 +15,12 @@ func HandleEnqueueTask(_ context.Context, req *dto.EnqueueTaskRequest, asynqClie
 	platformTaskID := uuid.New().String()
 
 	platformTask := &platform.PlatformTask{
-		ID:      platformTaskID,
-		Payload: req.Payload,
+		ID:       platformTaskID,
+		TypeName: req.JobType,
+		Payload:  req.Payload,
 	}
 
-	task, err := platformTask.ToAsynqTask(req.JobType)
+	task, err := platformTask.ToAsynqTask()
 	if err != nil {
 		return nil, err
 	}

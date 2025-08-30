@@ -13,9 +13,9 @@ import (
 
 func HandleScheduleTask(_ context.Context, req *dto.ScheduleTaskRequest, asynqClient *asynq.Client) (*dto.ScheduleTaskResponse, error) {
 	platformTaskID := uuid.New().String()
-	pt := &platform.PlatformTask{ID: platformTaskID, Payload: req.Payload}
+	pt := &platform.PlatformTask{ID: platformTaskID, TypeName: req.JobType, Payload: req.Payload}
 
-	task, err := pt.ToAsynqTask(req.JobType)
+	task, err := pt.ToAsynqTask()
 	if err != nil {
 		return nil, err
 	}
