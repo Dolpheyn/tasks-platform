@@ -10,7 +10,7 @@ import (
 	dto "github.com/dolpheyn/tasks-platform/internal/api/dto"
 	handlers "github.com/dolpheyn/tasks-platform/internal/api/handlers"
 	"github.com/dolpheyn/tasks-platform/internal/config"
-	"github.com/dolpheyn/tasks-platform/pkg/platform/taskmanager"
+	"github.com/dolpheyn/tasks-platform/pkg/taskmanager"
 )
 
 type Server struct {
@@ -18,10 +18,10 @@ type Server struct {
 	router      *gin.Engine
 	asynqClient *asynq.Client
 
-	taskManager *taskmanager.TaskManager
+	taskManager taskmanager.TaskManager
 }
 
-func NewServer(cfg *config.Config) *Server {
+func NewServer(cfg *config.Config, taskManager taskmanager.TaskManager) *Server {
 	router := gin.Default()
 
 	redisOpt := asynq.RedisClientOpt{
@@ -35,7 +35,7 @@ func NewServer(cfg *config.Config) *Server {
 		config:      cfg,
 		router:      router,
 		asynqClient: asynq.NewClient(&redisOpt),
-		taskManager: taskmanager.NewTaskManager(),
+		taskManager: taskManager,
 	}
 
 	server.startTaskManager(&redisOpt,
@@ -132,7 +132,7 @@ func (s *Server) completeTask(ctx *gin.Context) {
 		return
 	}
 
-	err := handlers.HandleCompleteTask(ctx, &req, s.taskManager)
+	err := handlers.HandleCompleteTask(ctx.Request.Context(), &req, s.taskManager)
 	if err != nil {
 		resErrorInternal(ctx, err)
 		return
@@ -143,7 +143,7 @@ func (s *Server) completeTask(ctx *gin.Context) {
 func (s *Server) failTask(ctx *gin.Context) {
 	var req dto.FailRequest
 
-	err := handlers.HandleFailTask(ctx, &req, s.taskManager)
+	err := handlers.HandleFailTask(ctx.Request.Context(), &req, s.taskManager)
 	if err != nil {
 		resErrorInternal(ctx, err)
 		return

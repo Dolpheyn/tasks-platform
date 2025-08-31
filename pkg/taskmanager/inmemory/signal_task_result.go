@@ -1,29 +1,31 @@
-package taskmanager
+package inmemory
 
 import (
 	"fmt"
+
+	taskmanager "github.com/dolpheyn/tasks-platform/pkg/taskmanager"
 )
 
-func (m *TaskManager) SignalTaskResultSuccess(platformTaskID string) error {
+func (m *InMemoryTaskManager) SignalTaskResultSuccess(platformTaskID string) error {
 	resultSignal, ok := m.resultSignalsByID[platformTaskID]
 	if !ok {
 		return fmt.Errorf("result signal not found. platformTaskID=%s", platformTaskID)
 	}
 
-	resultSignal <- ResultSignal{
+	resultSignal <- taskmanager.ResultSignal{
 		Success: true,
 	}
 
 	return nil
 }
 
-func (m *TaskManager) SignalTaskResultFailure(platformTaskID string, errMessage string) error {
+func (m *InMemoryTaskManager) SignalTaskResultFailure(platformTaskID string, errMessage string) error {
 	resultSignal, ok := m.resultSignalsByID[platformTaskID]
 	if !ok {
 		return fmt.Errorf("result signal not found. platformTaskID=%s", platformTaskID)
 	}
 
-	resultSignal <- ResultSignal{
+	resultSignal <- taskmanager.ResultSignal{
 		Success: false,
 		Msg:     errMessage,
 	}

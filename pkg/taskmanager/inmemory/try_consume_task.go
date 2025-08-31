@@ -1,18 +1,19 @@
-package taskmanager
+package inmemory
 
 import (
 	"context"
 	"fmt"
 	"log"
 
-	pfm "github.com/dolpheyn/tasks-platform/pkg/platform"
+	pfm "github.com/dolpheyn/tasks-platform/pkg"
+	taskmanager "github.com/dolpheyn/tasks-platform/pkg/taskmanager"
 )
 
 // TryConsumeTask consumes a pending task by taskType, then signal the pickup to the waiting ProcessTask above.
 // errors:
 // - if the task queue is empty
 // - if no listeners are found (unlikely)
-func (m *TaskManager) TryConsumeTask(ctx context.Context, taskType string, clientID string) (*pfm.PlatformTask, error) {
+func (m *InMemoryTaskManager) TryConsumeTask(ctx context.Context, taskType string, clientID string) (*pfm.PlatformTask, error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
@@ -40,7 +41,7 @@ func (m *TaskManager) TryConsumeTask(ctx context.Context, taskType string, clien
 		return nil, fmt.Errorf("pickup signal listener not found")
 	}
 
-	pickupSignalListener <- PickupSignal{ClientID: clientID}
+	pickupSignalListener <- taskmanager.PickupSignal{ClientID: clientID}
 
 	return task, nil
 }
