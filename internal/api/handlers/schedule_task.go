@@ -8,12 +8,12 @@ import (
 	"github.com/hibiken/asynq"
 
 	dto "github.com/dolpheyn/tasks-platform/internal/api/dto"
-	"github.com/dolpheyn/tasks-platform/pkg/platform"
+	pfm "github.com/dolpheyn/tasks-platform/pkg"
 )
 
 func HandleScheduleTask(_ context.Context, req *dto.ScheduleTaskRequest, asynqClient *asynq.Client) (*dto.ScheduleTaskResponse, error) {
 	platformTaskID := uuid.New().String()
-	pt := &platform.PlatformTask{ID: platformTaskID, TypeName: req.JobType, Payload: req.Payload}
+	pt := &pfm.PlatformTask{ID: platformTaskID, TypeName: req.JobType, Payload: req.Payload}
 
 	task, err := pt.ToAsynqTask()
 	if err != nil {

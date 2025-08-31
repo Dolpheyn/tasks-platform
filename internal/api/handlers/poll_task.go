@@ -5,10 +5,10 @@ import (
 	"log"
 
 	"github.com/dolpheyn/tasks-platform/internal/api/dto"
-	"github.com/dolpheyn/tasks-platform/pkg/platform/taskmanager"
+	"github.com/dolpheyn/tasks-platform/pkg/taskmanager"
 )
 
-func HandlePollTask(ctx context.Context, req *dto.PollTaskRequest, taskManager taskmanager.TaskManagerInterface) (*dto.PollResponse, error) {
+func HandlePollTask(ctx context.Context, req *dto.PollTaskRequest, taskManager taskmanager.TaskManager) (*dto.PollResponse, error) {
 	log.Printf("[handlePollTask] got request. taskType=%s", req.TaskType)
 	platformTask, err := taskManager.TryConsumeTask(ctx, req.TaskType, req.WorkerID)
 	if err != nil {

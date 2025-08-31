@@ -8,13 +8,13 @@ import (
 	"github.com/hibiken/asynq"
 
 	"github.com/dolpheyn/tasks-platform/internal/api/dto"
-	"github.com/dolpheyn/tasks-platform/pkg/platform"
+	pfm "github.com/dolpheyn/tasks-platform/pkg"
 )
 
 func HandleEnqueueTask(_ context.Context, req *dto.EnqueueTaskRequest, asynqClient *asynq.Client) (*dto.EnqueueTaskResponse, error) {
 	platformTaskID := uuid.New().String()
 
-	platformTask := &platform.PlatformTask{
+	platformTask := &pfm.PlatformTask{
 		ID:       platformTaskID,
 		TypeName: req.JobType,
 		Payload:  req.Payload,

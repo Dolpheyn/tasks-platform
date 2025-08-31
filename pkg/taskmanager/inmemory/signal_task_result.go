@@ -1,7 +1,9 @@
-package taskmanager
+package inmemory
 
 import (
 	"fmt"
+
+	taskmanager "github.com/dolpheyn/tasks-platform/pkg/taskmanager"
 )
 
 func (m *InMemoryTaskManager) SignalTaskResultSuccess(platformTaskID string) error {
@@ -10,7 +12,7 @@ func (m *InMemoryTaskManager) SignalTaskResultSuccess(platformTaskID string) err
 		return fmt.Errorf("result signal not found. platformTaskID=%s", platformTaskID)
 	}
 
-	resultSignal <- ResultSignal{
+	resultSignal <- taskmanager.ResultSignal{
 		Success: true,
 	}
 
@@ -23,7 +25,7 @@ func (m *InMemoryTaskManager) SignalTaskResultFailure(platformTaskID string, err
 		return fmt.Errorf("result signal not found. platformTaskID=%s", platformTaskID)
 	}
 
-	resultSignal <- ResultSignal{
+	resultSignal <- taskmanager.ResultSignal{
 		Success: false,
 		Msg:     errMessage,
 	}

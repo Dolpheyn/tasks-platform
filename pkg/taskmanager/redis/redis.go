@@ -1,4 +1,4 @@
-package taskmanager
+package redis
 
 import (
 	"context"
@@ -10,7 +10,8 @@ import (
 	"github.com/hibiken/asynq"
 	"github.com/redis/go-redis/v9"
 
-	pfm "github.com/dolpheyn/tasks-platform/pkg/platform"
+	pfm "github.com/dolpheyn/tasks-platform/pkg"
+	taskmanager "github.com/dolpheyn/tasks-platform/pkg/taskmanager"
 )
 
 const (
@@ -115,7 +116,7 @@ func (m *RedisTaskManager) TryConsumeTask(ctx context.Context, taskType string, 
 
 	// Publish the pickup signal
 	pickupSignalKey := pickupSignalPrefix + taskID
-	pickupSignal := PickupSignal{ClientID: clientID}
+	pickupSignal := taskmanager.PickupSignal{ClientID: clientID}
 	pickupSignalJSON, err := json.Marshal(pickupSignal)
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal pickup signal: %v", err)
@@ -137,7 +138,7 @@ func (m *RedisTaskManager) SignalTaskResultFailure(platformTaskID string, errMes
 
 func (m *RedisTaskManager) signalTaskResult(platformTaskID string, success bool, msg string) error {
 	resultSignalKey := resultSignalPrefix + platformTaskID
-	resultSignal := ResultSignal{Success: success, Msg: msg}
+	resultSignal := taskmanager.ResultSignal{Success: success, Msg: msg}
 	resultSignalJSON, err := json.Marshal(resultSignal)
 	if err != nil {
 		return fmt.Errorf("failed to marshal result signal: %v", err)
@@ -148,14 +149,14 @@ func (m *RedisTaskManager) signalTaskResult(platformTaskID string, success bool,
 	return nil
 }
 
-func (m *RedisTaskManager) WaitForTaskPickup(ctx context.Context, taskID string) (*PickupSignal, error) {
+func (m *RedisTaskManager) WaitForTaskPickup(ctx context.Context, taskID string) (*taskmanager.PickupSignal, error) {
 	pickupSignalKey := pickupSignalPrefix + taskID
 	pubsub := m.redisClient.Subscribe(context.Background(), pickupSignalKey)
 	defer pubsub.Close()
 
 	select {
 	case msg := <-pubsub.Channel():
-		var pickupSignal PickupSignal
+		var pickupSignal taskmanager.PickupSignal
 		if err := json.Unmarshal([]byte(msg.Payload), &pickupSignal); err != nil {
 			return nil, fmt.Errorf("failed to unmarshal pickup signal: %v", err)
 		}
@@ -165,14 +166,14 @@ func (m *RedisTaskManager) WaitForTaskPickup(ctx context.Context, taskID string)
 	}
 }
 
-func (m *RedisTaskManager) WaitForTaskResult(ctx context.Context, taskID string) (*ResultSignal, error) {
+func (m *RedisTaskManager) WaitForTaskResult(ctx context.Context, taskID string) (*taskmanager.ResultSignal, error) {
 	resultSignalKey := resultSignalPrefix + taskID
 	pubsub := m.redisClient.Subscribe(context.Background(), resultSignalKey)
 	defer pubsub.Close()
 
 	select {
 	case msg := <-pubsub.Channel():
-		var resultSignal ResultSignal
+		var resultSignal taskmanager.ResultSignal
 		if err := json.Unmarshal([]byte(msg.Payload), &resultSignal); err != nil {
 			return nil, fmt.Errorf("failed to unmarshal result signal: %v", err)
 		}

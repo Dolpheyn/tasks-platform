@@ -16,15 +16,6 @@ type PlatformTask struct {
 	Payload          []byte     `json:"payload"`
 }
 
-// ToAsynqTask converts PlatformTask to asynq.Task
-func (pt *PlatformTask) ToAsynqTask() (*asynq.Task, error) {
-	payload, err := json.Marshal(pt)
-	if err != nil {
-		return nil, fmt.Errorf("failed to marshal platform task: %v", err)
-	}
-	return asynq.NewTask(pt.TypeName, payload), nil
-}
-
 // FromAsynqTask converts asynq.Task payload to PlatformTask
 func FromAsynqTask(task *asynq.Task) (*PlatformTask, error) {
 	var pt PlatformTask
@@ -33,4 +24,13 @@ func FromAsynqTask(task *asynq.Task) (*PlatformTask, error) {
 	}
 	pt.TypeName = task.Type()
 	return &pt, nil
+}
+
+// ToAsynqTask converts PlatformTask to asynq.Task
+func (pt *PlatformTask) ToAsynqTask() (*asynq.Task, error) {
+	payload, err := json.Marshal(pt)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal platform task: %v", err)
+	}
+	return asynq.NewTask(pt.TypeName, payload), nil
 }

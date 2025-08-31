@@ -10,7 +10,7 @@ import (
 	dto "github.com/dolpheyn/tasks-platform/internal/api/dto"
 	handlers "github.com/dolpheyn/tasks-platform/internal/api/handlers"
 	"github.com/dolpheyn/tasks-platform/internal/config"
-	"github.com/dolpheyn/tasks-platform/pkg/platform/taskmanager"
+	"github.com/dolpheyn/tasks-platform/pkg/taskmanager"
 )
 
 type Server struct {
@@ -18,10 +18,10 @@ type Server struct {
 	router      *gin.Engine
 	asynqClient *asynq.Client
 
-	taskManager taskmanager.TaskManagerInterface
+	taskManager taskmanager.TaskManager
 }
 
-func NewServer(cfg *config.Config, taskManager taskmanager.TaskManagerInterface) *Server {
+func NewServer(cfg *config.Config, taskManager taskmanager.TaskManager) *Server {
 	router := gin.Default()
 
 	redisOpt := asynq.RedisClientOpt{
